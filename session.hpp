@@ -35,7 +35,8 @@ protected:
   virtual void on_start() = 0;
   virtual void on_read(message const& msg) = 0;
   virtual void on_write() = 0;
-
+  virtual void on_finish() = 0;
+  
   virtual void on_read_header_error(boost::system::error_code ec) {}
   virtual void on_read_body_error(boost::system::error_code ec) {}
   virtual void on_write_error(boost::system::error_code ec) {}
@@ -69,6 +70,13 @@ protected:
         });
   }
 
+  template<class Session, class Application>
+  void give_control_to(Application& app)
+  {
+    on_finish();
+    std::make_shared<Session>(std::move(socket_), app)->start();
+  }
+  
 private:
 
   void do_read_header()
