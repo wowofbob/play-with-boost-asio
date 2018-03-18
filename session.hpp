@@ -13,7 +13,7 @@
 
 
 class session
-  : std::enable_shared_from_this<session>
+  : public std::enable_shared_from_this<session>
 {
 public:
 

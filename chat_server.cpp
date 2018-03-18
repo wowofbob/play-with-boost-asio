@@ -18,6 +18,7 @@
 #include <boost/asio.hpp>
 #include "message.hpp"
 #include "entrance.hpp"
+#include "session.hpp"
 
 using boost::asio::ip::tcp;
 
@@ -204,6 +205,70 @@ private:
   chat_room room_;
 };
 
+class chat_session1
+  : public chat_participant
+  , public session
+{
+public:
+  typedef chat_room application_t;
+
+  chat_session1(tcp::socket socket, chat_room& room)
+    : session(std::move(socket)),
+      room_(room)
+  {
+  }
+
+  ~chat_session1() {}
+
+  void deliver(const chat_message& msg)
+  {
+    bool write_in_progress = !write_msgs_.empty();
+    write_msgs_.push_back(msg);
+    if (!write_in_progress)
+    {
+      do_write(write_msgs_.front());
+    }
+  }
+  
+protected:
+  void on_start()
+  {
+    room_.join(std::dynamic_pointer_cast<chat_participant>(shared_from_this()));
+  }
+  void on_read(message const& msg)
+  {
+    room_.deliver(msg);
+  }
+  void on_write()
+  {
+    write_msgs_.pop_front();
+    if (!write_msgs_.empty())
+    {
+      do_write(write_msgs_.front());
+    }
+  }
+  void on_finish()
+  {
+    room_.leave(std::dynamic_pointer_cast<chat_participant>(shared_from_this()));
+  }
+  void on_read_header_error(boost::system::error_code)
+  {
+    on_finish();
+  }
+  void on_read_body_error(boost::system::error_code)
+  {
+    on_finish();
+  }
+  void on_write_error(boost::system::error_code)
+  {
+    on_finish();
+  }
+private:
+  chat_room& room_;
+  chat_message read_msg_;
+  chat_message_queue write_msgs_;
+};
+
 //----------------------------------------------------------------------
 
 int main(int argc, char* argv[])
@@ -219,7 +284,8 @@ int main(int argc, char* argv[])
     boost::asio::io_service io_service;
 
     //std::list<chat_server> servers;
-    std::list<entrance<chat_session> > servers;
+    //std::list<entrance<chat_session> > servers;
+    std::list<entrance<chat_session1>> servers;
     for (int i = 1; i < argc; ++i)
     {
       tcp::endpoint endpoint(tcp::v4(), std::atoi(argv[i]));
