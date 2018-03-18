@@ -32,8 +32,7 @@ public:
   void start()
   {
     LOG;
-    on_start(); //room_.join(shared_from_this());
-    //do_read();  //do_read_header();
+    on_start();
   }
 
 protected:
@@ -108,15 +107,10 @@ protected:
           if (!ec)
           {
             on_write();
-	    // write_msgs_.pop_front();
-            // if (!write_msgs_.empty())
-            // {
-            //   do_write();
-            // }
           }
           else
           {
-	    on_write_error(ec); //room_.leave(shared_from_this());
+	    on_write_error(ec);
           }
         });
   }
@@ -166,7 +160,7 @@ private:
           }
           else
           {
-            on_read_header_error(ec); //room_.leave(shared_from_this());
+            on_read_header_error(ec);
           }
         });
   }
@@ -182,12 +176,11 @@ private:
         {
           if (!ec)
           {
-            on_read(read_msg_); //room_.deliver(read_msg_);
-            // do_read_header();
+            on_read(read_msg_);
           }
           else
           {
-	    on_read_body_error(ec); //room_.leave(shared_from_this());
+	    on_read_body_error(ec);
           }
         });
   }
