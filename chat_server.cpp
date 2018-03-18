@@ -205,6 +205,9 @@ private:
   chat_room room_;
 };
 
+
+#define LOG { std::cout << __FUNCTION__ << std::endl; }
+
 class chat_session1
   : public chat_participant
   , public session
@@ -216,12 +219,17 @@ public:
     : session(std::move(socket)),
       room_(room)
   {
+    LOG;
   }
 
-  ~chat_session1() {}
+  ~chat_session1()
+  {
+    LOG;
+  }
 
   void deliver(const chat_message& msg)
   {
+    LOG;
     bool write_in_progress = !write_msgs_.empty();
     write_msgs_.push_back(msg);
     if (!write_in_progress)
@@ -233,14 +241,18 @@ public:
 protected:
   void on_start()
   {
+    LOG;
     room_.join(std::dynamic_pointer_cast<chat_participant>(shared_from_this()));
   }
   void on_read(message const& msg)
   {
+    LOG;
     room_.deliver(msg);
+    do_read();
   }
   void on_write()
   {
+    LOG;
     write_msgs_.pop_front();
     if (!write_msgs_.empty())
     {
@@ -249,18 +261,22 @@ protected:
   }
   void on_finish()
   {
+    LOG;
     room_.leave(std::dynamic_pointer_cast<chat_participant>(shared_from_this()));
   }
   void on_read_header_error(boost::system::error_code)
   {
+    LOG;
     on_finish();
   }
   void on_read_body_error(boost::system::error_code)
   {
+    LOG;
     on_finish();
   }
   void on_write_error(boost::system::error_code)
   {
+    LOG;
     on_finish();
   }
 private:

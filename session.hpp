@@ -11,6 +11,7 @@
 #include <boost/asio.hpp>
 #include "message.hpp"
 
+#define LOG { std::cout << __FUNCTION__ << std::endl; }
 
 class session
   : public std::enable_shared_from_this<session>
@@ -20,12 +21,17 @@ public:
   session(boost::asio::ip::tcp::socket socket)
     : socket_(std::move(socket))
   {
+    LOG;
   }
 
-  virtual ~session() {}
+  virtual ~session()
+  {
+    LOG;
+  }
   
   void start()
   {
+    LOG;
     on_start(); //room_.join(shared_from_this());
     do_read();  //do_read_header();
   }
@@ -43,11 +49,13 @@ protected:
 
   void do_read()
   {
+    LOG;
     do_read_header();
   }
   
   void do_write(message const& msg)
   {
+    LOG;
     auto self(shared_from_this());
     boost::asio::async_write
       ( socket_
@@ -73,6 +81,7 @@ protected:
   template<class Session, class Application>
   void give_control_to(Application& app)
   {
+    LOG;
     on_finish();
     std::make_shared<Session>(std::move(socket_), app)->start();
   }
@@ -81,6 +90,7 @@ private:
 
   void do_read_header()
   {
+    LOG;
     auto self(shared_from_this());
     boost::asio::async_read
       ( socket_
@@ -100,6 +110,7 @@ private:
 
   void do_read_body()
   {
+    LOG;
     auto self(shared_from_this());
     boost::asio::async_read
       ( socket_
