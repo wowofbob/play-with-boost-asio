@@ -47,6 +47,26 @@ protected:
   virtual void on_read_body_error(boost::system::error_code ec) {}
   virtual void on_write_error(boost::system::error_code ec) {}
 
+  void read()
+  {
+    std::size_t bytes_read;
+    boost::system::error_code ec;
+
+    read_header(bytes_read, ec);
+    if (ec || bytes_read != message::header_length)
+    {
+      on_read_header_error(ec);
+    }
+
+    read_body(bytes_read, ec);
+    if (ec || bytes_read != read_msg_.get_body_length())
+    {
+      on_read_body_error(ec);
+    }
+
+    on_read(read_msg_);
+  }
+  
   void do_read()
   {
     LOG;
@@ -87,6 +107,25 @@ protected:
   }
   
 private:
+
+  void read_header(std::size_t& bytes_read, boost::system::error_code& ec)
+  {
+    bytes_read =
+      boost::asio::read
+        ( socket_
+        , boost::asio::buffer(read_msg_.data(), message::header_length)
+        , ec);
+  }
+
+  void read_body(std::size_t& bytes_read, boost::system::error_code& ec)
+  {
+    bytes_read =
+      boost::asio::read
+        ( socket_
+	, boost::asio::buffer(read_msg_.body(), read_msg_.get_body_length())
+	, ec
+	);
+  }
 
   void do_read_header()
   {
