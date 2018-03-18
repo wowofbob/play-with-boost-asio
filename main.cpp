@@ -1,5 +1,6 @@
 #include "entrance.hpp"
 #include "message.hpp"
+#include "session.hpp"
 
 #include <iostream>
 
