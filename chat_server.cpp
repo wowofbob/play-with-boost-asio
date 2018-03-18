@@ -243,6 +243,7 @@ protected:
   {
     LOG;
     room_.join(std::dynamic_pointer_cast<chat_participant>(shared_from_this()));
+    do_read();
   }
   void on_read(message const& msg)
   {
@@ -258,6 +259,88 @@ protected:
     {
       do_write(write_msgs_.front());
     }
+  }
+  void on_finish()
+  {
+    LOG;
+    room_.leave(std::dynamic_pointer_cast<chat_participant>(shared_from_this()));
+  }
+  void on_read_header_error(boost::system::error_code)
+  {
+    LOG;
+    on_finish();
+  }
+  void on_read_body_error(boost::system::error_code)
+  {
+    LOG;
+    on_finish();
+  }
+  void on_write_error(boost::system::error_code)
+  {
+    LOG;
+    on_finish();
+  }
+private:
+  chat_room& room_;
+  chat_message read_msg_;
+  chat_message_queue write_msgs_;
+};
+
+
+class chat_session1_sync
+  : public chat_participant
+  , public session
+{
+public:
+  typedef chat_room application_t;
+
+  chat_session1_sync(tcp::socket socket, chat_room& room)
+    : session(std::move(socket)),
+      room_(room)
+  {
+    LOG;
+  }
+
+  ~chat_session1_sync()
+  {
+    LOG;
+  }
+
+  void deliver(const chat_message& msg)
+  {
+    LOG;
+    bool write_in_progress = !write_msgs_.empty();
+    write_msgs_.push_back(msg);
+    if (!write_in_progress)
+    {
+      write(write_msgs_.front());
+    }
+  }
+  
+protected:
+  void on_start()
+  {
+    LOG;
+    room_.join(std::dynamic_pointer_cast<chat_participant>(shared_from_this()));
+    read();
+  }
+  void on_read(message const& msg)
+  {
+    LOG;
+    //room_.deliver(msg);
+    write(msg);
+    //read();
+  }
+  void on_write()
+  {
+    LOG;
+    read();
+    // LOG;
+    // write_msgs_.pop_front();
+    // if (!write_msgs_.empty())
+    // {
+    //   do_write(write_msgs_.front());
+    // }
   }
   void on_finish()
   {
@@ -301,7 +384,7 @@ int main(int argc, char* argv[])
 
     //std::list<chat_server> servers;
     //std::list<entrance<chat_session> > servers;
-    std::list<entrance<chat_session1>> servers;
+    std::list<entrance<chat_session1_sync>> servers;
     for (int i = 1; i < argc; ++i)
     {
       tcp::endpoint endpoint(tcp::v4(), std::atoi(argv[i]));

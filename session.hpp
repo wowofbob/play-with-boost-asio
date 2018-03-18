@@ -33,7 +33,7 @@ public:
   {
     LOG;
     on_start(); //room_.join(shared_from_this());
-    do_read();  //do_read_header();
+    //do_read();  //do_read_header();
   }
 
 protected:
